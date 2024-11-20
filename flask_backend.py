@@ -7,7 +7,7 @@ import pygame
 import to_speech
 
 source_lang = "en"
-target_lang = "ko"
+target_lang = "ar"
 
 # Initialize ASR pipeline with Whisper
 asr_pipeline = pipeline("automatic-speech-recognition", 
@@ -84,7 +84,8 @@ def translate_audio_endpoint():
 
 @app.route("/hand-sign")
 def hand_sign_endpoint():
-    import hand_sign
+    # import hand_sign
+    os.system("python hand_sign.py")
 
 
 

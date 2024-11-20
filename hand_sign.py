@@ -45,7 +45,7 @@ mp_drawing_styles = mp.solutions.drawing_styles
 
 hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
 
-labels_dict = {36: 'DRUM N BASS', 1: 'B', 2: 'C', 3: 'D', 4: 'E', -1: 'None', 37:'Stop'}
+labels_dict = {0: 'DRUM N BASS', 1: 'B', 2: 'C', 3: 'D', 4: 'E', -1: 'None', 37:'Stop'}
 
 current_sentence = []
 current_letter = None
