@@ -33,9 +33,9 @@ def translate_text(text, source_lang, target_lang):
     return translation
 
 
-def save_text_to_sound(text):
+def save_text_to_sound(text, target_language = "en"):
     """Convert text to speech and play it"""
-    to_speech.speech_to_file(text)
+    to_speech.speech_to_file(text, target_lang=target_language)
     
 
 
