@@ -33,6 +33,8 @@ def translate_text(text, source_lang, target_lang):
     return translation
 
 
+
+
 def save_text_to_sound(text):
     """Convert text to speech and play it"""
     to_speech.speech_to_file(text)
@@ -66,6 +68,8 @@ def translate_text_endpoint():
     text = request.args.get("text")
 
     return translate_text(text, from_language, to_language)
+
+
 
 @app.route('/process-audio', methods=['POST'])
 def process_audio():

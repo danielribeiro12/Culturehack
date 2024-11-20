@@ -1,79 +1,98 @@
-// speech_controller.dart
-import 'package:record/record.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class SpeechController {
-  final _audioRecorder = Record();
+class SpeechController extends ChangeNotifier {
+  final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
   String _text = '';
+  String _translatedText = '';
 
   Future<void> initSpeech() async {
     try {
-      final hasPermission = await _audioRecorder.hasPermission();
-      if (!hasPermission) {
-        _text = 'Microphone permission denied';
-        return;
-      }
+      _isListening = await _speech.initialize();
     } catch (e) {
       _text = 'Error initializing: $e';
     }
   }
 
   Future<void> startListening() async {
-    try {
-      await _audioRecorder.start(
-        encoder: AudioEncoder.aacLc, // Use AAC encoding
-        bitRate: 128000, // 128kbps
-        samplingRate: 44100, // 44.1kHz
+    if (!_isListening) {
+      _isListening = await _speech.listen(
+        onResult: (result) async {
+          _text = result.recognizedWords;
+          if (_text.isNotEmpty) {
+            await _translateToMalay();
+          }
+          notifyListeners();
+        },
       );
-      _isListening = true;
-      _text = 'Recording...';
-    } catch (e) {
-      _text = 'Error recording: $e';
-      _isListening = false;
+      notifyListeners();
     }
   }
 
   Future<void> stopListening() async {
-    try {
-      final path = await _audioRecorder.stop();
-      _isListening = false;
-      _text = 'Processing...';
+    await _speech.stop();
+    _isListening = false;
 
-      if (path != null) {
-        // Create multipart request
-        final request = http.MultipartRequest(
-          'POST',
-          Uri.parse('http://localhost:5000/process-audio'),
+    // Send text to backend for processing
+    if (_text.isNotEmpty) {
+      try {
+        final response = await http.get(
+          Uri.parse('http://localhost:5000/translate-text').replace(
+            queryParameters: {
+              'text': _text,
+              'from_lang': 'en',
+              'to_lang': 'ko',
+            },
+          ),
         );
-
-        // Add the audio file
-        request.files.add(
-          await http.MultipartFile.fromPath('audio', path),
-        );
-
-        // Add language parameters
-        request.fields['from_lang'] = 'en';
-        request.fields['to_lang'] = 'es';
-
-        // Send the request
-        final streamedResponse = await request.send();
-        final response = await http.Response.fromStream(streamedResponse);
 
         if (response.statusCode == 200) {
-          final jsonResponse = jsonDecode(response.body);
-          _text = jsonResponse['translation'];
+          _text = response.body;
         } else {
           _text = 'Error: ${response.statusCode}';
         }
+      } catch (e) {
+        _text = 'Network error: $e';
       }
-    } catch (e) {
-      _text = 'Error processing: $e';
     }
+
+    notifyListeners();
   }
 
-  // Getters
+  Future<void> _translateToMalay() async {
+    try {
+      print('Attempting to translate: $_text'); // Debug log
+
+      // Try using IP address instead of localhost
+      final response = await http.get(
+        Uri.parse('http://127.0.0.1:5000/translate-text').replace(
+          queryParameters: {
+            'text': _text,
+            'from_lang': 'en',
+            'to_lang': 'ms',
+          },
+        ),
+      );
+
+      print('Response status: ${response.statusCode}'); // Debug log
+      print('Response body: ${response.body}'); // Debug log
+
+      if (response.statusCode == 200) {
+        _translatedText = response.body;
+      } else {
+        _translatedText = 'Error: ${response.statusCode}';
+      }
+    } catch (e) {
+      print('Detailed error: $e'); // Debug log
+      _translatedText = 'Network error: $e';
+    }
+    notifyListeners();
+  }
+
   bool get isListening => _isListening;
   String get text => _text;
+  String get translatedText => _translatedText;
 }
