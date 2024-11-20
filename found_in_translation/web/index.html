@@ -31,6 +31,24 @@
 
   <title>found_in_translation</title>
   <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/web-audio-recorder-js/lib/WebAudioRecorder.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/record-web@0.3.0/index.js"></script>
+  <script>
+    if (typeof navigator.mediaDevices === 'undefined') {
+      navigator.mediaDevices = {};
+    }
+    if (typeof navigator.mediaDevices.getUserMedia === 'undefined') {
+      navigator.mediaDevices.getUserMedia = function(constraints) {
+        var getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+        if (!getUserMedia) {
+          return Promise.reject(new Error('getUserMedia is not implemented in this browser'));
+        }
+        return new Promise(function(resolve, reject) {
+          getUserMedia.call(navigator, constraints, resolve, reject);
+        });
+      }
+    }
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

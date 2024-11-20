@@ -39,6 +39,7 @@ dependencies:
   record: ^4.4.4
   camera: ^0.10.5+5
   image_picker: ^1.0.4
+  path_provider: ^2.0.2
 
 dev_dependencies:
   flutter_test:

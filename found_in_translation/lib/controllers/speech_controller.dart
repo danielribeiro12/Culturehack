@@ -1,6 +1,7 @@
 // speech_controller.dart
 import 'package:record/record.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class SpeechController {
   final _audioRecorder = Record();
@@ -8,29 +9,67 @@ class SpeechController {
   String _text = '';
 
   Future<void> initSpeech() async {
-    // Initialize recorder permissions
-    await _audioRecorder.hasPermission();
+    try {
+      final hasPermission = await _audioRecorder.hasPermission();
+      if (!hasPermission) {
+        _text = 'Microphone permission denied';
+        return;
+      }
+    } catch (e) {
+      _text = 'Error initializing: $e';
+    }
   }
 
   Future<void> startListening() async {
-    await _audioRecorder.start();
-    _isListening = true;
-    _text = 'Listening...';
+    try {
+      await _audioRecorder.start(
+        encoder: AudioEncoder.aacLc, // Use AAC encoding
+        bitRate: 128000, // 128kbps
+        samplingRate: 44100, // 44.1kHz
+      );
+      _isListening = true;
+      _text = 'Recording...';
+    } catch (e) {
+      _text = 'Error recording: $e';
+      _isListening = false;
+    }
   }
 
   Future<void> stopListening() async {
-    final path = await _audioRecorder.stop();
-    _isListening = false;
+    try {
+      final path = await _audioRecorder.stop();
+      _isListening = false;
+      _text = 'Processing...';
 
-    if (path != null) {
-      final request = http.MultipartRequest(
-          'POST', Uri.parse('http://localhost:5000/translate-audio'));
+      if (path != null) {
+        // Create multipart request
+        final request = http.MultipartRequest(
+          'POST',
+          Uri.parse('http://localhost:5000/process-audio'),
+        );
 
-      request.files.add(await http.MultipartFile.fromPath('audio', path));
-      request.fields['target_lang'] = 'es';
+        // Add the audio file
+        request.files.add(
+          await http.MultipartFile.fromPath('audio', path),
+        );
 
-      final response = await request.send();
-      _text = await response.stream.bytesToString();
+        // Add language parameters
+        request.fields['from_lang'] = 'en';
+        request.fields['to_lang'] = 'es';
+
+        // Send the request
+        final streamedResponse = await request.send();
+        final response = await http.Response.fromStream(streamedResponse);
+
+        if (response.statusCode == 200) {
+          final jsonResponse = jsonDecode(response.body);
+          _text = jsonResponse['translation'];
+        } else {
+          _text = 'Error: ${response.statusCode}';
+        }
+      }
+    } catch (e) {
+      _text = 'Error processing: $e';
     }
   }
 

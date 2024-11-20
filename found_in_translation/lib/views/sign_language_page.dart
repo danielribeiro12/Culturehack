@@ -1,43 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:camera/camera.dart';
 
-class SignLanguagePage extends StatefulWidget {
+class SignLanguagePage extends StatelessWidget {
   const SignLanguagePage({super.key});
 
-  @override
-  State<SignLanguagePage> createState() => _SignLanguagePageState();
-}
-
-class _SignLanguagePageState extends State<SignLanguagePage> {
-  CameraController? _controller;
-  bool _isCameraInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeCamera();
-  }
-
-  Future<void> _initializeCamera() async {
-    final cameras = await availableCameras();
-    if (cameras.isEmpty) return;
-
-    _controller = CameraController(cameras[0], ResolutionPreset.medium);
+  Future<void> _openCamera() async {
+    final ImagePicker picker = ImagePicker();
     try {
-      await _controller!.initialize();
-      if (mounted) {
-        setState(() => _isCameraInitialized = true);
-      }
+      await picker.pickImage(source: ImageSource.camera);
+      // Handle the captured image here
     } catch (e) {
-      debugPrint('Error initializing camera: $e');
+      debugPrint('Error picking image: $e');
     }
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
   }
 
   @override
@@ -48,17 +22,14 @@ class _SignLanguagePageState extends State<SignLanguagePage> {
       ),
       body: Stack(
         children: [
-          if (_isCameraInitialized && _controller != null)
-            CameraPreview(_controller!)
-          else
-            Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/background2.jpg'),
-                  fit: BoxFit.cover,
-                ),
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/background2.jpg'),
+                fit: BoxFit.cover,
               ),
             ),
+          ),
           const Center(
             child: Text(
               'Sign Language Page Content',
@@ -70,17 +41,7 @@ class _SignLanguagePageState extends State<SignLanguagePage> {
             left: 20,
             right: 20,
             child: ElevatedButton(
-              onPressed: () async {
-                if (_controller != null && _controller!.value.isInitialized) {
-                  try {
-                    final image = await _controller!.takePicture();
-                    // Handle the captured image here
-                    debugPrint('Image captured: ${image.path}');
-                  } catch (e) {
-                    debugPrint('Error capturing image: $e');
-                  }
-                }
-              },
+              onPressed: _openCamera,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 backgroundColor: Colors.blue,
@@ -89,7 +50,7 @@ class _SignLanguagePageState extends State<SignLanguagePage> {
                 ),
               ),
               child: const Text(
-                'Capture',
+                'Start Translation',
                 style: TextStyle(fontSize: 18, color: Colors.white),
               ),
             ),
