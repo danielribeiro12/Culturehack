@@ -6,7 +6,7 @@ import pygame
 import to_speech
 
 source_lang = "en"
-target_lang = "es"
+target_lang = "ko"
 
 # Initialize ASR pipeline with Whisper
 asr_pipeline = pipeline("automatic-speech-recognition", 
@@ -30,8 +30,8 @@ def transcribe_audio(audio_file):
 def translate_text(text, source_lang, target_lang):
     """Translate text to target language"""
     translation = translator.translate(text, 
-                                            src=source_lang,
-                                            dest=target_lang)
+                                    src=source_lang,
+                                    dest=target_lang)
     return translation
 
 
