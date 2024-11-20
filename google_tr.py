@@ -1,5 +1,6 @@
 from transformers import pipeline
-from googletrans import Translator
+# from googletrans import Translator
+from deep_translator import GoogleTranslator
 import os
 import pygame
 import to_speech
@@ -12,18 +13,18 @@ asr_pipeline = pipeline("automatic-speech-recognition",
                             model="openai/whisper-base")
 
 # Initialize translator
-translator = Translator()
+# translator = Translator()
+translator = GoogleTranslator(source=source_lang, target=target_lang)
 
 # Initialize pygame for audio playback
-pygame.mixer.init()
+# pygame.mixer.init()
 
 
 def transcribe_audio(audio_file):
     # Transcribe
     result = asr_pipeline(audio_file)
-    os.remove(audio_file)
+    # os.remove(audio_file)
     return result["text"]
-
 
 
 def translate_text(text, source_lang, target_lang):
@@ -31,23 +32,28 @@ def translate_text(text, source_lang, target_lang):
     translation = translator.translate(text, 
                                             src=source_lang,
                                             dest=target_lang)
-    return translation.text
-
+    return translation
 
 
 def speak_text(text):
     """Convert text to speech and play it"""
     to_speech.speech_to_file(text)
     
-speak_text("helooooo")
+# speak_text("hello")
 
 
 def translate_audio(from_language, to_language, audio_file):
-    transcibed_text = transcribe_audio(audio_file)
-    translated_text = translate_text(from_language, to_language, transcibed_text)
-    speak_text(transcibed_text)
+    transcribed_text = transcribe_audio(audio_file)
+    print(transcribed_text)
+    translated_text = translate_text(transcribed_text, from_language, to_language)
+    speak_text(translated_text)
+    # speak_text("Hello how are you")
+    print(translated_text)
 
+# translate_audio(source_lang, target_lang, "output.mp3")
+print(translator.translate("Hello"))
 
+translate_audio(source_lang, target_lang, "input.mp3")
 
 
 #         # Define abbreviations in a table format
