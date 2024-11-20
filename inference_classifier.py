@@ -13,6 +13,9 @@ is_playing = False  # Track if song is currently playing
 
 # Add these variables after other initializations
 dnb_start_time = None  # Track when DNB gesture starts
+letter_start_time = None  # Track when a letter gesture starts
+current_prediction = None  # Track the current prediction
+LETTER_HOLD_THRESHOLD = 1.0  # Second(s) to hold letter before adding to sentence
 DNB_THRESHOLD = 1.0  # Second(s) to hold gesture before playing
 
 model_dict = pickle.load(open('./model.p', 'rb'))
@@ -42,7 +45,7 @@ mp_drawing_styles = mp.solutions.drawing_styles
 
 hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
 
-labels_dict = {36: 'DRUM N BASS', 1: 'B', 2: 'C', 3: 'D', 4: 'E', -1: 'None'}
+labels_dict = {36: 'DRUM N BASS', 1: 'B', 2: 'C', 3: 'D', 4: 'E', -1: 'None', 37:'Stop'}
 
 current_sentence = []
 current_letter = None
@@ -98,7 +101,7 @@ while True:
             predicted_label = int(prediction[0])
             
             # Check if prediction is in our known labels (0-4)
-            if predicted_label not in range(0,36):
+            if predicted_label not in range(0,38):
                 predicted_label = -1
                 
             predicted_character = labels_dict[predicted_label]
@@ -113,9 +116,33 @@ while True:
                     is_playing = True
             else:
                 dnb_start_time = None
-                if is_playing:
+                if is_playing and predicted_character == 'Stop':
                     dnb_song.stop()
                     is_playing = False
+
+            # Handle letter detection and holding
+            if predicted_character not in ['DRUM N BASS', 'Stop', 'None']:
+                if current_prediction != predicted_character:
+                    # Reset timer when switching to a new letter
+                    letter_start_time = time.time()
+                    current_prediction = predicted_character
+                elif letter_start_time is not None:
+                    # Check if we've held the letter long enough
+                    hold_time = time.time() - letter_start_time
+                    if hold_time >= LETTER_HOLD_THRESHOLD:
+                        current_sentence.append(predicted_character)  # Removed the duplicate check
+                        letter_start_time = None  # Reset timer after adding letter
+            else:
+                letter_start_time = None
+                current_prediction = None
+
+            # Add visual feedback for gesture timing
+            if letter_start_time is not None:
+                hold_time = time.time() - letter_start_time
+                if hold_time < LETTER_HOLD_THRESHOLD:
+                    progress = int((hold_time / LETTER_HOLD_THRESHOLD) * 100)
+                    cv2.putText(frame, f"Hold: {progress}%", (x1, y2 + 30), 
+                              cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2, cv2.LINE_AA)
 
             # Add visual feedback for gesture timing
             if dnb_start_time is not None:
@@ -131,6 +158,16 @@ while True:
         except ValueError as e:
             print(f"Prediction error: {e}")
             continue
+    else:
+        # Reset all states when no hand is detected
+        predicted_character = 'None'
+        current_letter = None
+        current_prediction = None
+        letter_start_time = None
+        dnb_start_time = None
+        if is_playing:
+            dnb_song.stop()
+            is_playing = False
 
     # Display the current sentence at the top of the frame
     cv2.putText(frame, f"Sentence: {' '.join(current_sentence)}", (10, 30), 
