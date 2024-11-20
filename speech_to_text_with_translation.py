@@ -1,17 +1,3 @@
-# from gtts import gTTS
-# import os
-
-# # Text to convert to speech
-# text = "how are you?"
-
-# # Generate speech
-# tts = gTTS(text, lang="en")  # Set the language code (e.g., 'fr' for French)
-# tts.save("output.mp3")
-
-# # Play the output (optional)
-# # os.system("start output.mp3")
-
-
 import speech_recognition as sr
 from gtts import gTTS
 from deep_translator import GoogleTranslator
