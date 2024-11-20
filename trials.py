@@ -26,7 +26,7 @@ for lang in sorted(languages):
 
 
 class SpeechTranslator:
-    def __init__(self, target_lang='es'):
+    def __init__(self, target_lang='tr'):
         self.recognizer = sr.Recognizer()
         self.translator = GoogleTranslator(source='auto', target=target_lang)
         self.target_lang = target_lang
@@ -71,7 +71,7 @@ class SpeechTranslator:
 
 if __name__ == "__main__":
     # Initialize with target language
-    translator = SpeechTranslator(target_lang='es')
+    translator = SpeechTranslator(target_lang='ne')
     
     while True:
         translator.record_and_translate()
