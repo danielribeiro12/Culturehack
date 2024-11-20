@@ -1,15 +1,7 @@
-import sounddevice as sd
-import numpy as np
-from transformers import Pipeline, pipeline
-from scipy.io.wavfile import write
-import torch
+from transformers import pipeline
 from googletrans import Translator
-from gtts import gTTS
 import os
 import pygame
-from queue import Queue
-import threading
-import time
 import to_speech
 
 source_lang = "en"
@@ -26,17 +18,15 @@ translator = Translator()
 pygame.mixer.init()
 
 
-
-
-def transcribe_audio():
+def transcribe_audio(audio_file):
     # Transcribe
-    result = asr_pipeline("temp.wav")
-    os.remove("temp.wav")
+    result = asr_pipeline(audio_file)
+    os.remove(audio_file)
     return result["text"]
 
 
 
-def translate_text(text):
+def translate_text(text, source_lang, target_lang):
     """Translate text to target language"""
     translation = translator.translate(text, 
                                             src=source_lang,
@@ -50,6 +40,12 @@ def speak_text(text):
     to_speech.speech_to_file(text)
     
 speak_text("helooooo")
+
+
+def translate_audio(from_language, to_language, audio_file):
+    transcibed_text = transcribe_audio(audio_file)
+    translated_text = translate_text(from_language, to_language, transcibed_text)
+    speak_text(transcibed_text)
 
 
 
